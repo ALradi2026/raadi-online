@@ -4,9 +4,40 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>الرعدي أونلاين</title>
+  <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-  <h1>مرحبا بك في متجر الرعدي أونلاين</h1>
-  <p>هذه هي الصفحة الرئيسية الأولى لمتجرك.</p>
+  <header class="site-header">
+    <div class="logo">
+      <img src="design/logo.png" alt="رأس الصقر" />
+      <span class="brand">الرعدي أونلاين</span>
+    </div>
+    <div class="search">
+      <input id="searchInput" placeholder="ابحث عن منتج..." />
+    </div>
+    <nav class="icons">
+      <button id="favBtn" title="المفضلة">❤</button>
+      <button id="cartBtn" title="السلة">🛒 <span id="cartCount">0</span></button>
+      <button id="accountBtn" title="حسابي">👤</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>مرحبا بك في متجر الرعدي أونلاين</h1>
+      <p>تجربة فاخرة وسهلة للتسوق</p>
+      <a href="#products" class="cta">تسوق الآن</a>
+    </section>
+
+    <section id="products" class="products-grid">
+      <!-- بطاقات المنتجات تُملأ بواسطة assets/app.js -->
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© كل الحقوق محفوظة - الرعدي أونلاين</p>
+  </footer>
+
+  <script src="assets/app.js"></script>
 </body>
 </html>
