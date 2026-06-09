@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>السلة - الرعدي أونلاين</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">
+      <img src="design/logo.png" alt="رأس الصقر" />
+      <span class="brand">الرعدي أونلاين</span>
+    </div>
+    <nav class="icons">
+      <button onclick="location.href='index.html'">🏠</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="cart-section">
+      <h2>سلة التسوق</h2>
+      <div id="cartList"></div>
+
+      <div class="cart-summary" style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+        <p>المجموع: <strong id="cartTotal">0</strong> ر.س</p>
+        <div>
+          <button id="clearBtn" class="btn-secondary">تفريغ السلة</button>
+          <button id="checkoutBtn" class="btn-primary">الدفع الآن</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© كل الحقوق محفوظة - الرعدي أونلاين</p>
+  </footer>
+
+  <script src="assets/app.js"></script>
+  <script>
+    // وظائف السلة تعتمد على localStorage كما في assets/app.js
+    (function(){
+      function read(key){ try{ return JSON.parse(localStorage.getItem(key)||'null'); }catch(e){return null} }
+      function write(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+      const KEY_CART = 'raadi_cart_v1';
+
+      function getCart(){ return read(KEY_CART) || []; }
+      function saveCart(cart){ write(KEY_CART,cart); }
+
+      function findProduct(id){
+        // نفس بيانات المنتجات الموجودة في app.js (مبسط)
+        const PRODUCTS = [
+          {id:1,sku:'RA-001',title:'ساعة رعدي كلاسيك',price:299,image:'design/logo.png'},
+          {id:2,sku:'RA-002',title:'سماعات رعدي برو',price:149,image:'https://picsum.photos/seed/p2/600/400'},
+          {id:3,sku:'RA-003',title:'عطر الرعدي الذهبي',price:89,image:'https://picsum.photos/seed/p3/600/400'},
+          {id:4,sku:'RA-004',title:'حقيبة سفر رعدي',price:199,image:'https://picsum.photos/seed/p4/600/400'}
+        ];
+        return PRODUCTS.find(p=>p.id==id) || null;
+      }
+
+      function renderCart(){
+        const list = getCart();
+        const container = document.getElementById('cartList');
+        const totalEl = document.getElementById('cartTotal');
+        if(!container) return;
+        if(list.length===0){
+          container.innerHTML = '<p>السلة فارغة</p>';
+          totalEl.textContent = '0';
+          return;
+        }
+        container.innerHTML = '';
+        let total = 0;
+        list.forEach(item=>{
+          const p = findProduct(item.id);
+          const subtotal = (p ? p.price : 0) * item.qty;
+          total += subtotal;
+          const row = document.createElement('div');
+          row.className = 'cart-item';
+          row.innerHTML = `
+            <img src="${p ? p.image : ''}" style="width:80px;height:80px;border-radius:8px;object-fit:cover"/>
+            <div style="flex:1">
+              <div><strong>${p ? p.title : 'منتج'}</strong></div>
+              <div class="muted">السعر: ${p ? p.price : 0} ر.س</div>
+              <div style="margin-top:8px">
+                <button class="btn-secondary dec" data-id="${item.id}">-</button>
+                <span style="padding:0 8px">${item.qty}</span>
+                <button class="btn-secondary inc" data-id="${item.id}">+</button>
+                <button class="btn-secondary remove" data-id="${item.id}" style="margin-left:12px">حذف</button>
+              </div>
+            </div>
+            <div style="min-width:120px;text-align:left">${subtotal} ر.س</div>
+          `;
+          container.appendChild(row);
+        });
+        totalEl.textContent = total;
+
+        container.querySelectorAll('.inc').forEach(b=>b.onclick = ()=>{ changeQty(parseInt(b.dataset.id),1); renderCart(); updateHeaderCount(); });
+        container.querySelectorAll('.dec').forEach(b=>b.onclick = ()=>{ changeQty(parseInt(b.dataset.id),-1); renderCart(); updateHeaderCount(); });
+        container.querySelectorAll('.remove').forEach(b=>b.onclick = ()=>{ removeFromCart(parseInt(b.dataset.id)); renderCart(); updateHeaderCount(); });
+      }
+
+      function changeQty(id,delta){
+        const cart = getCart();
+        const item = cart.find(i=>i.id==id);
+        if(!item) return;
+        item.qty += delta;
+        if(item.qty<=0) cart.splice(cart.indexOf(item),1);
+        saveCart(cart);
+      }
+      function removeFromCart(id){
+        let cart = getCart();
+        cart = cart.filter(i=>i.id!=id);
+        saveCart(cart);
+      }
+      function clearCart(){ saveCart([]); renderCart(); updateHeaderCount(); }
+
+      function updateHeaderCount(){
+        const el = document.getElementById('cartCount');
+        if(!el) return;
+        const count = getCart().reduce((s,i)=>s+i.qty,0);
+        el.textContent = count;
+      }
+
+      document.getElementById('clearBtn').onclick = ()=> { if(confirm('هل تريد تفريغ السلة؟')) clearCart(); };
+      document.getElementById('checkoutBtn').onclick = ()=> {
+        const auth = localStorage.getItem('raadi_auth_v1');
+        if(!auth){ alert('يجب تسجيل الدخول لإتمام الطلب'); location.href='login.html'; return; }
+        if(getCart().length===0){ alert('السلة فارغة'); return; }
+        // إنشاء طلب وهمي وتفريغ السلة
+        const orders = JSON.parse(localStorage.getItem('raadi_orders_v1')||'[]');
+        const order = { id: Date.now(), items: getCart(), total: parseInt(document.getElementById('cartTotal').textContent||'0'), created_at: new Date().toISOString() };
+        orders.push(order);
+        localStorage.setItem('raadi_orders_v1', JSON.stringify(orders));
+        clearCart();
+        alert('تم إنشاء الطلب بنجاح. يمكنك مراجعة الطلبات في حسابك.');
+        location.href = 'account.html';
+      };
+
+      // تهيئة العرض
+      renderCart();
+      updateHeaderCount();
+    })();
+  </script>
+</body>
+</html>
