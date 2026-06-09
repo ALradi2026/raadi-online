@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>حسابي - الرعدي أونلاين</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">
+      <img src="design/logo.png" alt="رأس الصقر" />
+      <span class="brand">الرعدي أونلاين</span>
+    </div>
+    <nav class="icons">
+      <button onclick="location.href='index.html'">🏠</button>
+      <button id="logoutBtn" class="btn-secondary">تسجيل خروج</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="auth-card" style="margin:24px auto;max-width:720px;text-align:right">
+      <h2>حسابي</h2>
+      <div id="profileInfo" style="text-align:right;margin-bottom:12px">
+        <p><strong id="userName">—</strong></p>
+        <p class="muted" id="userEmail">—</p>
+      </div>
+
+      <h3>الطلبات</h3>
+      <div id="ordersList">
+        <p class="muted">جارٍ تحميل الطلبات...</p>
+      </div>
+
+      <h3 style="margin-top:18px">الإعدادات</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button id="clearOrders" class="btn-secondary">مسح الطلبات الوهمية</button>
+        <button id="deleteAccount" class="btn-secondary">حذف بيانات محلية</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© كل الحقوق محفوظة - الرعدي أونلاين</p>
+  </footer>
+
+  <script>
+    (function(){
+      const KEY_AUTH = 'raadi_auth_v1';
+      const KEY_ORDERS = 'raadi_orders_v1';
+      function read(key){ try{ return JSON.parse(localStorage.getItem(key)||'null'); }catch(e){return null} }
+      function write(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+
+      function loadProfile(){
+        const user = read(KEY_AUTH);
+        if(!user){ alert('لم تقم بتسجيل الدخول'); location.href='login.html'; return; }
+        document.getElementById('userName').textContent = user.name || 'مستخدم';
+        document.getElementById('userEmail').textContent = user.email || '';
+      }
+
+      function renderOrders(){
+        const list = read(KEY_ORDERS) || [];
+        const container = document.getElementById('ordersList');
+        if(list.length===0){ container.innerHTML = '<p>لا توجد طلبات حتى الآن.</p>'; return; }
+        container.innerHTML = '';
+        list.slice().reverse().forEach(o=>{
+          const el = document.createElement('div');
+          el.className = 'card';
+          el.style.marginBottom = '10px';
+          el.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div><strong>طلب #${o.id}</strong></div>
+                <div class="muted">تاريخ: ${new Date(o.created_at).toLocaleString()}</div>
+                <div class="muted">العناصر: ${o.items.length}</div>
+              </div>
+              <div style="text-align:left">
+                <div><strong>${o.total} ر.س</strong></div>
+                <button class="btn-secondary view-order" data-id="${o.id}" style="margin-top:8px">عرض</button>
+              </div>
+            </div>
+          `;
+          container.appendChild(el);
+        });
+        document.querySelectorAll('.view-order').forEach(b=>{
+          b.onclick = ()=> {
+            const id = b.dataset.id;
+            alert('تفاصيل الطلب (وهمية). معرف الطلب: ' + id);
+          };
+        });
+      }
+
+      document.getElementById('logoutBtn').onclick = function(){
+        localStorage.removeItem(KEY_AUTH);
+        alert('تم تسجيل الخروج');
+        location.href = 'index.html';
+      };
+      document.getElementById('clearOrders').onclick = function(){
+        if(confirm('هل تريد مسح جميع الطلبات الوهمية؟')){ localStorage.removeItem(KEY_ORDERS); renderOrders(); }
+      };
+      document.getElementById('deleteAccount').onclick = function(){
+        if(confirm('سيتم حذف بيانات الحساب المحلية. متابعة؟')){
+          localStorage.removeItem(KEY_AUTH);
+          localStorage.removeItem(KEY_ORDERS);
+          localStorage.removeItem('raadi_cart_v1');
+          alert('تم حذف البيانات المحلية');
+          location.href = 'index.html';
+        }
+      };
+
+      // تهيئة
+      loadProfile();
+      renderOrders();
+    })();
+  </script>
+</body>
+</html>
